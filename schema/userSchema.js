@@ -5,7 +5,7 @@ const { signToken } = require("../helpers/jwt");
 
 const typeDefs = `#graphql
     type User {
-        id: ID
+        _id: ID
         name: String
         email: String
         job: String
@@ -39,7 +39,7 @@ const typeDefs = `#graphql
     type Mutation {
         createUser(name: String, username: String, email: String, password: String): User
         login(username: String, password: String): LoginResponse
-        updateUser(id: ID, name: String, email: String, job: String, commuteDistance: Float, stressLevel: Int, mood: String, preferences: [String]): User
+        updateUser(_id: ID, name: String, email: String, job: String, commuteDistance: Float, stressLevel: Int, mood: String, preferences: [String]): User
     }
 `;
 
