@@ -14,8 +14,13 @@ class UserModel {
     return data;
   }
 
-  static async getUsers() {
+  static async findAll() {
     const data = await collection.find().toArray();
+    return data;
+  }
+
+  static async findById(_id) {
+    const data = await collection.findOne({ _id: new ObjectId(String(_id)) });
     return data;
   }
 
