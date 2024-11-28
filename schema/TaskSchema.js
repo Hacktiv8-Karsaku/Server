@@ -1,4 +1,3 @@
-const { Query } = require("pg");
 const TaskModel = require("../models/TaskModel");
 
 const typeDefs = `#graphql
@@ -29,7 +28,6 @@ const typeDefs = `#graphql
 
     type Mutation {
         createTask(title: String, description: String): Task
-        updateTask(_id: ID, title: String, description: String): Task
     }
 `;
 
