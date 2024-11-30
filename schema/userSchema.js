@@ -1,22 +1,35 @@
-const { isEmail } = require("validator");
 const UserModel = require("../models/userModel");
-const { hashPass, comparePass } = require("../helpers/bcyrpt");
+const { comparePass } = require("../helpers/bcyrpt");
 const { signToken } = require("../helpers/jwt");
+const { generateRecommendations } = require('../helpers/openai');
+const { ObjectId } = require('mongodb');
 
 const typeDefs = `#graphql
     type User {
         _id: ID
         name: String
+        username: String
         email: String
+        password: String
         job: String
-        commuteDistance: Float
+        dailyActivities: [String]
         stressLevel: Int
-        mood: String
-        preferences: [preference]
-        totalCaloriesConsumed: Int
-        recommendedCalories: Int
+        preferredFoods: [String]
+        avoidedFoods: [String]
+        recommendations: Recommendations
         createdAt: String
         updatedAt: String
+    }
+
+    type Recommendations {
+        todoList: [String]
+        places: [Place]
+        foods: [String]
+    }
+
+    type Place {
+        name: String
+        description: String
     }
 
     type Query {
@@ -30,7 +43,7 @@ const typeDefs = `#graphql
         activity: String
     }
 
-    type LoginResponse{
+    type LoginResponse {
         access_token: String
         userId: ID
         username: String
@@ -40,6 +53,13 @@ const typeDefs = `#graphql
         createUser(name: String, username: String, email: String, password: String): User
         login(username: String, password: String): LoginResponse
         updateUser(_id: ID, name: String, email: String, job: String, commuteDistance: Float, stressLevel: Int, mood: String, preferences: [String]): User
+        updateUserPreferences(
+            job: String
+            dailyActivities: [String]
+            stressLevel: Int
+            preferredFoods: [String]
+            avoidedFoods: [String]
+        ): User
     }
 `;
 
@@ -61,51 +81,11 @@ const resolvers = {
   },
   Mutation: {
     createUser: async (parent, args, contextValue) => {
-      let { name, username, email, password } = args;
+      const newUser = args;
+      const result = await UserModel.register(newUser);
+      newUser._id = result.insertedId;
 
-      if (!name) {
-        throw new Error("Name is required");
-      }
-
-      if (!username) {
-        throw new Error("Username is required");
-      }
-
-      if (!email) {
-        throw new Error("Email is required");
-      }
-
-      if (!isEmail(email)) {
-        throw new Error("Email format is invalid");
-      }
-
-      if (!password) {
-        throw new Error("Password is required");
-      }
-
-      if (password.length < 5) {
-        throw new Error("Password length should be at least 5 characters");
-      }
-
-      const getUsername = await UserModel.getUserByUsername(username);
-      if (getUsername) {
-        throw new Error("Username already exists");
-      }
-
-      const getEmail = await UserModel.getUserByEmail(email);
-      if (getEmail) {
-        throw new Error("Email already exists");
-      }
-
-      password = hashPass(password);
-      const newUser = {
-        name,
-        username,
-        email,
-        password,
-      };
-      const user = await UserModel.register(newUser);
-      return user;
+      return newUser;
     },
 
     login: async (parent, args, contextValue) => {
@@ -142,6 +122,27 @@ const resolvers = {
         username: getUsername.username,
       };
     },
+    updateUserPreferences: async (_, args, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { _id } = user;
+
+        // Generate AI recommendations
+        const recommendations = await generateRecommendations(args);
+
+        // Update user in database
+        const updatedUser = await UserModel.updateUser({
+          _id: new ObjectId(_id),
+          ...args,
+          recommendations,
+          updatedAt: new Date()
+        });
+
+        return updatedUser;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    }
   },
 };
 
