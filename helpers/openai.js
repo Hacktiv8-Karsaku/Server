@@ -1,43 +1,37 @@
-// helpers/openaiHelper.js
-const { Configuration, OpenAIApi } = require("openai");
-const dotenv = require("dotenv");
+const OpenAI = require('openai');
 
-dotenv.config();
-
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
-const getRecommendations = async (userData) => {
-  const { tasks, stressLevel, mood } = userData;
-
-  const prompt = `
-    Based on the following information, provide personalized recommendations for a healthy lifestyle:
-    - Tasks: ${tasks.join(", ")}
-    - Stress Level: ${stressLevel}%
-    - Mood: ${mood}.
-    
-    Include actionable suggestions to improve well-being.
-  `;
-
+async function generateRecommendations(userPreferences) {
   try {
-    const response = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: prompt,
-      max_tokens: 200,
+    const prompt = `Based on this user profile:
+    - Job: ${userPreferences.job}
+    - Daily Activities: ${userPreferences.dailyActivities.join(', ')}
+    - Stress Level: ${userPreferences.stressLevel}
+    - Preferred Foods: ${userPreferences.preferredFoods.join(', ')}
+    - Avoided Foods: ${userPreferences.avoidedFoods.join(', ')}
+
+    Please provide recommendations in the following JSON format:
+    {
+      "todoList": [array of 5 stress relief activities],
+      "places": [array of 3 recommended places or activities with descriptions],
+      "foods": [array of 5 healthy food recommendations considering preferences]
+    }`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "system", content: prompt }],
+      model: "gpt-3.5-turbo",
       temperature: 0.7,
+      max_tokens: 500,
     });
 
-    if (response.data.choices && response.data.choices.length > 0) {
-      return response.data.choices[0].text.trim();
-    } else {
-      throw new Error("No recommendation received from OpenAI.");
-    }
+    return JSON.parse(completion.choices[0].message.content);
   } catch (error) {
-    console.error("Error with OpenAI API:", error);
-    throw new Error("Could not fetch recommendations. Please try again later.");
+    console.error('OpenAI Error:', error);
+    throw new Error('Failed to generate recommendations');
   }
-};
+}
 
-module.exports = { getRecommendations };
+module.exports = { generateRecommendations }; 
