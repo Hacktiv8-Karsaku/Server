@@ -5,7 +5,7 @@ const { startStandaloneServer } = require("@apollo/server/standalone");
 const { usersResolvers, usersTypeDefs } = require("./schema/userSchema");
 const { taskResolvers, taskTypeDefs } = require("./schema/TaskSchema");
 const { verifyToken } = require("./helpers/jwt");
-const UserModel = require("./models/userModel");
+const UserModel = require("./models/UserModel");
 const { ObjectId } = require("mongodb");
 
 const server = new ApolloServer({
