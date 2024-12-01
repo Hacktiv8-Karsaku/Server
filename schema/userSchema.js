@@ -1,4 +1,4 @@
-const UserModel = require("../models/userModel");
+const UserModel = require("../models/UserModel");
 const { comparePass } = require("../helpers/bcyrpt");
 const { signToken } = require("../helpers/jwt");
 const { generateRecommendations } = require("../helpers/openai");
@@ -90,7 +90,7 @@ const resolvers = {
       } catch (error) {
         throw new Error(error.message);
       }
-    }
+    },
   },
   Mutation: {
     createUser: async (parent, args, contextValue) => {
@@ -184,7 +184,7 @@ const resolvers = {
         );
 
         if (!updatedUser) {
-          throw new Error('Todo item not found');
+          throw new Error("Todo item not found");
         }
 
         return updatedUser;
