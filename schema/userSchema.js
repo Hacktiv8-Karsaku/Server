@@ -1,8 +1,8 @@
 const UserModel = require("../models/userModel");
 const { comparePass } = require("../helpers/bcyrpt");
 const { signToken } = require("../helpers/jwt");
-const { generateRecommendations } = require('../helpers/openai');
-const { ObjectId } = require('mongodb');
+const { generateRecommendations } = require("../helpers/openai");
+const { ObjectId } = require("mongodb");
 
 const typeDefs = `#graphql
     type User {
@@ -17,6 +17,7 @@ const typeDefs = `#graphql
         preferredFoods: [String]
         avoidedFoods: [String]
         recommendations: Recommendations
+        savedTodos: [String]
         createdAt: String
         updatedAt: String
     }
@@ -35,6 +36,7 @@ const typeDefs = `#graphql
     type Query {
         getAllUsers: [User]
         getUserProfile(id: ID): User
+        getSavedTodos: [String]
     }
 
     type preference {
@@ -60,6 +62,8 @@ const typeDefs = `#graphql
             preferredFoods: [String]
             avoidedFoods: [String]
         ): User
+        saveTodoItem(todoItem: String): User
+        deleteTodoItem(todoItem: String): User
     }
 `;
 
@@ -78,6 +82,15 @@ const resolvers = {
       const user = await UserModel.getUserProfile(_id);
       return user;
     },
+
+    getSavedTodos: async (_, __, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        return user.savedTodos || [];
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    }
   },
   Mutation: {
     createUser: async (parent, args, contextValue) => {
@@ -135,14 +148,50 @@ const resolvers = {
           _id: new ObjectId(_id),
           ...args,
           recommendations,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
 
         return updatedUser;
       } catch (error) {
         throw new Error(error.message);
       }
-    }
+    },
+    saveTodoItem: async (_, { todoItem }, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { _id } = user;
+
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { _id },
+          { $push: { savedTodos: todoItem } },
+          { new: true }
+        );
+
+        return updatedUser;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    deleteTodoItem: async (_, { todoItem }, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { _id } = user;
+
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { _id },
+          { $pull: { savedTodos: todoItem } }, // $pull removes the matching element
+          { new: true }
+        );
+
+        if (!updatedUser) {
+          throw new Error('Todo item not found');
+        }
+
+        return updatedUser;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
   },
 };
 
