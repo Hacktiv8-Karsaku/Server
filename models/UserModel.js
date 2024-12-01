@@ -92,6 +92,15 @@ class UserModel {
 
     return result;
   }
+
+  static async findOneAndUpdate(filter, update, options) {
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(String(filter._id)) },
+      update,
+      { ...options, returnDocument: 'after' }
+    );
+    return result;
+  }
 }
 
 module.exports = UserModel;
