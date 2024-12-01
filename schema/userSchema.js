@@ -25,11 +25,18 @@ const typeDefs = `#graphql
     type Recommendations {
         todoList: [String]
         places: [Place]
-        foods: [String]
+        foodVideos: [Video]
     }
 
     type Place {
         name: String
+        description: String
+    }
+
+    type Video {
+        title: String
+        url: String
+        thumbnail: String
         description: String
     }
 
@@ -54,7 +61,6 @@ const typeDefs = `#graphql
     type Mutation {
         createUser(name: String, username: String, email: String, password: String): User
         login(username: String, password: String): LoginResponse
-        updateUser(_id: ID, name: String, email: String, job: String, commuteDistance: Float, stressLevel: Int, mood: String, preferences: [String]): User
         updateUserPreferences(
             job: String
             dailyActivities: [String]
@@ -140,10 +146,8 @@ const resolvers = {
         const user = await contextValue.auth();
         const { _id } = user;
 
-        // Generate AI recommendations
         const recommendations = await generateRecommendations(args);
 
-        // Update user in database
         const updatedUser = await UserModel.updateUser({
           _id: new ObjectId(_id),
           ...args,
@@ -179,7 +183,7 @@ const resolvers = {
 
         const updatedUser = await UserModel.findOneAndUpdate(
           { _id },
-          { $pull: { savedTodos: todoItem } }, // $pull removes the matching element
+          { $pull: { savedTodos: todoItem } },
           { new: true }
         );
 
