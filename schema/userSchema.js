@@ -72,6 +72,7 @@ const typeDefs = `#graphql
         ): User
         saveTodoItem(todoItem: String): User
         deleteTodoItem(todoItem: String): User
+        regenerateTodos: User
     }
 `;
 
@@ -189,6 +190,32 @@ const resolvers = {
         if (!updatedUser) {
           throw new Error("Video not found");
         }
+
+        return updatedUser;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    regenerateTodos: async (_, __, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { _id } = user;
+
+        // Generate new recommendations
+        const recommendations = await generateRecommendations({
+          job: user.job,
+          dailyActivities: user.dailyActivities,
+          stressLevel: user.stressLevel,
+          preferredFoods: user.preferredFoods,
+          avoidedFoods: user.avoidedFoods,
+        });
+
+        // Update user with new recommendations
+        const updatedUser = await UserModel.updateUser({
+          _id: new ObjectId(_id),
+          recommendations,
+          updatedAt: new Date(),
+        });
 
         return updatedUser;
       } catch (error) {
