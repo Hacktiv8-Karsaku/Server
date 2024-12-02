@@ -9,6 +9,32 @@ const UserModel = require("./models/UserModel");
 const { ObjectId } = require("mongodb");
 const { professionalResolvers, professionalTypeDefs } = require("./schema/professionalSchema");
 const { chatResolvers, chatTypeDefs } = require("./schema/chatSchema");
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+
+const httpServer = createServer();
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on('connection', (socket) => {
+  socket.on('join', (chatId) => {
+    socket.join(chatId);
+  });
+
+  socket.on('leave', (chatId) => {
+    socket.leave(chatId);
+  });
+
+  socket.on('sendMessage', ({ chatId, message }) => {
+    io.to(chatId).emit('message', message);
+  });
+});
+
+httpServer.listen(4000);
 
 const server = new ApolloServer({
   typeDefs: [usersTypeDefs, taskTypeDefs, professionalTypeDefs, chatTypeDefs],
