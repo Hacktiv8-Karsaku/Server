@@ -105,7 +105,11 @@ class UserModel {
   static async shouldAskQuestions(userId) {
     const user = await collection.findOne({ _id: new ObjectId(String(userId)) });
     
-    if (!user.job || !user.dailyActivities || !user.lastQuestionDate) {
+    if (!user.dailyActivities) {
+      return true;
+    }
+
+    if (!user.lastQuestionDate) {
       return true;
     }
 

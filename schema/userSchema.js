@@ -63,7 +63,7 @@ const typeDefs = `#graphql
     }
 
     type Mutation {
-        createUser(name: String, username: String, email: String, password: String): User
+        createUser(name: String, username: String, email: String, password: String, job: String): User
         login(username: String, password: String): LoginResponse
         updateUserPreferences(
             job: String
@@ -74,6 +74,7 @@ const typeDefs = `#graphql
         ): User
         saveTodoItem(todoItem: String): User
         deleteTodoItem(todoItem: String): User
+        regenerateTodos: User
     }
 
     type Coordinates {
@@ -196,6 +197,32 @@ const resolvers = {
         if (!updatedUser) {
           throw new Error("Video not found");
         }
+
+        return updatedUser;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    regenerateTodos: async (_, __, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { _id } = user;
+
+        // Generate new recommendations
+        const recommendations = await generateRecommendations({
+          job: user.job,
+          dailyActivities: user.dailyActivities,
+          stressLevel: user.stressLevel,
+          preferredFoods: user.preferredFoods,
+          avoidedFoods: user.avoidedFoods,
+        });
+
+        // Update user with new recommendations
+        const updatedUser = await UserModel.updateUser({
+          _id: new ObjectId(_id),
+          recommendations,
+          updatedAt: new Date(),
+        });
 
         return updatedUser;
       } catch (error) {
