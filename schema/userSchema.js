@@ -18,6 +18,7 @@ const typeDefs = `#graphql
         avoidedFoods: [String]
         recommendations: Recommendations
         savedTodos: [String]
+        lastQuestionDate: String
         createdAt: String
         updatedAt: String
     }
@@ -56,6 +57,7 @@ const typeDefs = `#graphql
         access_token: String
         userId: ID
         username: String
+        shouldAskQuestions: Boolean
     }
 
     type Mutation {
@@ -110,35 +112,27 @@ const resolvers = {
     login: async (parent, args, contextValue) => {
       const { username, password } = args;
 
-      if (!username) {
-        throw new Error("Username is required");
-      }
+      if (!username) throw new Error("Username is required");
+      if (!password) throw new Error("Password is required");
 
-      if (!password) {
-        throw new Error("Password is required");
-      }
+      const user = await UserModel.getUserByUsername(username);
+      if (!user) throw new Error("Username not found");
 
-      const getUsername = await UserModel.getUserByUsername(username);
-      if (!getUsername) {
-        throw new Error("Username not found");
-      }
+      const isPasswordValid = comparePass(password, user.password);
+      if (!isPasswordValid) throw new Error("Invalid username or password");
 
-      const isPasswordValid = comparePass(password, getUsername.password);
-      if (!isPasswordValid) {
-        throw new Error("Invalid username or password");
-      }
+      const shouldAskQuestions = await UserModel.shouldAskQuestions(user._id);
 
       const token = signToken({
-        _id: getUsername._id,
-        username: getUsername.username,
+        _id: user._id,
+        username: user.username,
       });
-
-      await UserModel.login(getUsername);
 
       return {
         access_token: token,
-        userId: getUsername._id,
-        username: getUsername.username,
+        userId: user._id,
+        username: user.username,
+        shouldAskQuestions
       };
     },
     updateUserPreferences: async (_, args, contextValue) => {
@@ -152,6 +146,7 @@ const resolvers = {
           _id: new ObjectId(_id),
           ...args,
           recommendations,
+          lastQuestionDate: new Date().toISOString(),
           updatedAt: new Date(),
         });
 

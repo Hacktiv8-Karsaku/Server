@@ -101,6 +101,26 @@ class UserModel {
     );
     return result;
   }
+
+  static async shouldAskQuestions(userId) {
+    const user = await collection.findOne({ _id: new ObjectId(String(userId)) });
+    
+    if (!user.job || !user.dailyActivities || !user.lastQuestionDate) {
+      return true;
+    }
+
+    const lastDate = new Date(user.lastQuestionDate);
+    const today = new Date();
+    
+    return lastDate.toDateString() !== today.toDateString();
+  }
+
+  static async updateLastQuestionDate(userId) {
+    await collection.updateOne(
+      { _id: new ObjectId(String(userId)) },
+      { $set: { lastQuestionDate: new Date().toISOString() } }
+    );
+  }
 }
 
 module.exports = UserModel;
