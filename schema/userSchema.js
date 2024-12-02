@@ -21,6 +21,7 @@ const typeDefs = `#graphql
         lastQuestionDate: String
         createdAt: String
         updatedAt: String
+        domicile: String
     }
 
     type Recommendations {
@@ -71,6 +72,7 @@ const typeDefs = `#graphql
             stressLevel: Int
             preferredFoods: [String]
             avoidedFoods: [String]
+            domicile: String
         ): User
         saveTodoItem(todoItem: String): User
         deleteTodoItem(todoItem: String): User

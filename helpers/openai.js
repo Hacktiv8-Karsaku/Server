@@ -49,8 +49,9 @@ async function generateRecommendations(userPreferences) {
     - Job: ${userPreferences.job}
     - Daily Activities: ${userPreferences.dailyActivities.join(", ")}
     - Stress Level: ${userPreferences.stressLevel}
+    - Location: ${userPreferences.domicile}
 
-    Please provide recommendations in JSON format:
+    Please provide recommendations for places near ${userPreferences.domicile} in JSON format:
     {
       "todoList": [array of 5 stress relief activities],
       "places": [
@@ -64,7 +65,9 @@ async function generateRecommendations(userPreferences) {
           }
         }
       ]
-    }`;
+    }
+
+    Note: Please ensure all recommended places are within 50km of ${userPreferences.domicile}.`;
 
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],
