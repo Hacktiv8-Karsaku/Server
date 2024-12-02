@@ -31,6 +31,10 @@ class UserModel {
       throw new Error("Password length should be at least 5 characters");
     }
 
+    if (!user.job) {
+      throw new Error("Job is required");
+    }
+
     const getUsername = await UserModel.getUserByUsername(user.username);
     if (getUsername) {
       throw new Error("Username already exists");
