@@ -7,10 +7,12 @@ const { taskResolvers, taskTypeDefs } = require("./schema/TaskSchema");
 const { verifyToken } = require("./helpers/jwt");
 const UserModel = require("./models/UserModel");
 const { ObjectId } = require("mongodb");
+const { professionalResolvers, professionalTypeDefs } = require("./schema/professionalSchema");
+const { chatResolvers, chatTypeDefs } = require("./schema/chatSchema");
 
 const server = new ApolloServer({
-  typeDefs: [usersTypeDefs, taskTypeDefs],
-  resolvers: [usersResolvers, taskResolvers],
+  typeDefs: [usersTypeDefs, taskTypeDefs, professionalTypeDefs, chatTypeDefs],
+  resolvers: [usersResolvers, taskResolvers, professionalResolvers, chatResolvers],
   introspection: true,
 });
 
