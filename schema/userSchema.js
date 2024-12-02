@@ -132,7 +132,7 @@ const resolvers = {
         access_token: token,
         userId: user._id,
         username: user.username,
-        shouldAskQuestions
+        shouldAskQuestions,
       };
     },
     updateUserPreferences: async (_, args, contextValue) => {
@@ -184,6 +184,10 @@ const resolvers = {
 
         if (!updatedUser) {
           throw new Error("Todo item not found");
+        }
+
+        if (!updatedUser) {
+          throw new Error("Video not found");
         }
 
         return updatedUser;
