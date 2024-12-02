@@ -32,6 +32,8 @@ const typeDefs = `#graphql
     type Place {
         name: String
         description: String
+        address: String
+        coordinates: Coordinates
     }
 
     type Video {
@@ -72,6 +74,11 @@ const typeDefs = `#graphql
         ): User
         saveTodoItem(todoItem: String): User
         deleteTodoItem(todoItem: String): User
+    }
+
+    type Coordinates {
+        lat: Float
+        lng: Float
     }
 `;
 

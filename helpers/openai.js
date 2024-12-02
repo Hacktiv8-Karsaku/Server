@@ -1,5 +1,6 @@
 const OpenAI = require("openai");
 const { youtube } = require("scrape-youtube");
+const { geocodeAddress } = require("./googleMaps");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -52,7 +53,17 @@ async function generateRecommendations(userPreferences) {
     Please provide recommendations in JSON format:
     {
       "todoList": [array of 5 stress relief activities],
-      "places": [array of 3 recommended places with descriptions]
+      "places": [
+        {
+          "name": "Full location name with city and country",
+          "description": "Brief description of the place",
+          "address": "Complete street address",
+          "coordinates": {
+            "lat": latitude as number,
+            "lng": longitude as number
+          }
+        }
+      ]
     }`;
 
     const completion = await openai.chat.completions.create({
@@ -69,8 +80,24 @@ async function generateRecommendations(userPreferences) {
     console.log("Videos found:", videos.length);
     console.log("Sample video:", videos[0]);
 
+    // Inside generateRecommendations function, after getting baseRecommendations:
+    const enhancedPlaces = await Promise.all(
+      baseRecommendations.places.map(async (place) => {
+        const geocodeResult = await geocodeAddress(place.name);
+        if (geocodeResult) {
+          return {
+            ...place,
+            address: geocodeResult.formattedAddress,
+            coordinates: geocodeResult.coordinates,
+          };
+        }
+        return place;
+      })
+    );
+
     return {
       ...baseRecommendations,
+      places: enhancedPlaces,
       foodVideos: videos,
     };
   } catch (error) {
