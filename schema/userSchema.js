@@ -217,6 +217,7 @@ const resolvers = {
           stressLevel: user.stressLevel,
           preferredFoods: user.preferredFoods,
           avoidedFoods: user.avoidedFoods,
+          domicile: user.domicile
         });
 
         // Update user with new recommendations

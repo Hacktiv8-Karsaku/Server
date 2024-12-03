@@ -51,23 +51,50 @@ async function generateRecommendations(userPreferences) {
     - Stress Level: ${userPreferences.stressLevel}
     - Location: ${userPreferences.domicile}
 
-    Please provide recommendations for places near ${userPreferences.domicile} in JSON format:
+    STRICT LOCATION REQUIREMENTS:
+    1. Only recommend places that are physically located within 50km of ${
+      userPreferences.domicile
+    }
+    2. Do not suggest any international or distant locations
+    3. All activities must be feasible to do locally in ${
+      userPreferences.domicile
+    }
+
+    Create a balanced todo list that includes:
+    1. Stress-reduction activities (meditation, breathing exercises, etc.)
+    2. Mood-boosting activities (exercise, social interactions, hobbies)
+    3. Local healing places or destinations to visit
+    4. Self-care practices
+    5. Mindfulness exercises
+
+    Consider the user's stress level (${
+      userPreferences.stressLevel
+    }/10) when suggesting activities.
+    Higher stress levels should include more calming activities, while lower stress levels can include more energetic activities.
+
+    Please provide recommendations in JSON format:
     {
-      "todoList": [array of 5 stress relief activities],
+      "todoList": [
+        array of 10 items including:
+        - 3 stress-reduction activities
+        - 2 mood-boosting activity
+        - 3 local healing place visit
+        - 2 self-care practice
+      ],
       "places": [
         {
-          "name": "Full location name with city and country",
-          "description": "Brief description of the place",
-          "address": "Complete street address",
+          "name": "Full location name including district/area in ${
+            userPreferences.domicile
+          }",
+          "description": "Brief description of the place and its stress-relief benefits",
+          "address": "Complete street address in ${userPreferences.domicile}",
           "coordinates": {
             "lat": latitude as number,
             "lng": longitude as number
           }
         }
       ]
-    }
-
-    Note: Please ensure all recommended places are within 50km of ${userPreferences.domicile}.`;
+    }`;
 
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],
