@@ -23,6 +23,8 @@ const typeDefs = `#graphql
     messages: [Message!]!
     createdAt: String!
     updatedAt: String!
+    isEnded: Boolean!
+    endedAt: String
   }
 
   type Query {
@@ -35,6 +37,7 @@ const typeDefs = `#graphql
     createChat(professionalId: ID!): Chat
     sendMessage(chatId: ID!, content: String!): Chat
     sendMessageProfessional(chatId: ID!, content: String!): Chat
+    endChat(chatId: ID!): Chat
   }
 `;
 
@@ -249,6 +252,23 @@ const resolvers = {
         return result;
       } catch (error) {
         console.error('Error in sendMessageProfessional:', error);
+        throw error;
+      }
+    },
+    
+    endChat: async (_, { chatId }, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const chat = await ChatModel.findChatById(chatId);
+        
+        if (!chat) {
+          throw new Error("Chat not found");
+        }
+
+        const result = await ChatModel.endChat(chatId);
+        return result;
+      } catch (error) {
+        console.error('Error ending chat:', error);
         throw error;
       }
     }

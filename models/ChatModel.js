@@ -64,6 +64,20 @@ class ChatModel {
       'participants.1': id
     }).toArray();
   }
+
+  static async endChat(chatId) {
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(String(chatId)) },
+      { 
+        $set: { 
+          isEnded: true,
+          endedAt: new Date()
+        }
+      },
+      { returnDocument: 'after' }
+    );
+    return result;
+  }
 }
 
 module.exports = ChatModel; 
