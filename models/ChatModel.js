@@ -5,10 +5,10 @@ const collection = db.collection("chats");
 
 class ChatModel {
   static async findChatsByUser(userId) {
-    const chats = await collection.find({
-      participants: { $in: [new ObjectId(String(userId))] }
+    const id = new ObjectId(String(userId));
+    return await collection.find({
+      'participants.0': id
     }).toArray();
-    return chats;
   }
 
   static async findChatById(chatId) {
@@ -21,7 +21,7 @@ class ChatModel {
   static async createChat(userId, professionalId) {
     const chat = {
       participants: [
-        new ObjectId(String(userId)), 
+        new ObjectId(String(userId)),
         new ObjectId(String(professionalId))
       ],
       messages: [],
@@ -34,11 +34,16 @@ class ChatModel {
   }
 
   static async addMessage(chatId, senderId, content) {
+    const chat = await this.findChatById(chatId);
+    if (!chat) throw new Error('Chat not found');
+
+    const senderObjectId = typeof senderId === 'string' ? new ObjectId(senderId) : senderId;
+
     const message = {
       _id: new ObjectId(),
-      sender: new ObjectId(String(senderId)),
+      sender: senderObjectId,
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     const result = await collection.findOneAndUpdate(
@@ -51,6 +56,13 @@ class ChatModel {
     );
 
     return result;
+  }
+
+  static async findChatsByProfessional(professionalId) {
+    const id = new ObjectId(String(professionalId));
+    return await collection.find({
+      'participants.1': id
+    }).toArray();
   }
 }
 

@@ -1,4 +1,6 @@
 const ProfessionalModel = require("../models/ProfessionalModel");
+const { comparePass } = require("../helpers/bcyrpt");
+const { signToken } = require("../helpers/jwt");
 
 const typeDefs = `#graphql
   type Professional {
@@ -14,8 +16,16 @@ const typeDefs = `#graphql
     totalPatients: Int
     price: Float!
     estimatedWaitTime: Int!
+    email: String!
+    password: String!
     createdAt: String
     updatedAt: String
+  }
+
+  type ProfessionalLoginResponse {
+    access_token: String
+    professionalId: ID
+    name: String
   }
 
   type Query {
@@ -36,7 +46,14 @@ const typeDefs = `#graphql
       totalPatients: Int
       price: Float!
       estimatedWaitTime: Int!
+      email: String!
+      password: String!
     ): Professional
+
+    loginProfessional(
+      email: String!
+      password: String!
+    ): ProfessionalLoginResponse
 
     updateProfessional(
       _id: ID!
@@ -81,6 +98,25 @@ const resolvers = {
       await contextValue.auth();
       const result = await ProfessionalModel.update(args);
       return result;
+    },
+
+    loginProfessional: async (_, { email, password }) => {
+      if (!email) throw new Error("Email is required");
+      if (!password) throw new Error("Password is required");
+
+      const professional = await ProfessionalModel.login(email, password);
+
+      const token = signToken({
+        _id: professional._id,
+        email: professional.email,
+        role: professional.specialization
+      });
+
+      return {
+        access_token: token,
+        professionalId: professional._id,
+        name: professional.name
+      };
     }
   }
 };
