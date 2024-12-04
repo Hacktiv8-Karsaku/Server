@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.9% </span>
+                <span class="strong">23.63% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/55</span>
+                <span class='fraction'>13/55</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">20% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>4/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">16.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>2/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.9% </span>
+                <span class="strong">23.63% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/55</span>
+                <span class='fraction'>13/55</span>
             </div>
         
             
@@ -202,8 +202,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -216,13 +228,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -232,16 +237,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -270,6 +265,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -331,21 +331,21 @@ const { hashPass } = require("../helpers/bcyrpt");
 const collection = db.collection("users");
 &nbsp;
 class UserModel {
-<span class="fstat-no" title="function not covered" >  st</span>atic async register(user) {
-<span class="cstat-no" title="statement not covered" >    if (!user.name) {</span>
+  static async register(user) {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!user.name) {
 <span class="cstat-no" title="statement not covered" >      throw new Error("Name is required");</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!user.username) {</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!user.username) {
 <span class="cstat-no" title="statement not covered" >      throw new Error("Username is required");</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!user.email) {</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!user.email) {
 <span class="cstat-no" title="statement not covered" >      throw new Error("Email is required");</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (!isEmail(user.email)) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new Error("Email format is invalid");</span>
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!isEmail(user.email)) {
+      throw new Error("Email format is invalid");
     }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!user.password) {</span>
@@ -397,9 +397,9 @@ class UserModel {
 <span class="cstat-no" title="statement not covered" >    return data;</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  st</span>atic async getUserByUsername(username) {
-    const data = <span class="cstat-no" title="statement not covered" >await collection.findOne({ username });</span>
-<span class="cstat-no" title="statement not covered" >    return data;</span>
+  static async getUserByUsername(username) {
+    const data = await collection.findOne({ username });
+    return data;
   }
 <span class="fstat-no" title="function not covered" >  st</span>atic async getUserByEmail(email) {
     const data = <span class="cstat-no" title="statement not covered" >await collection.findOne({ email });</span>
@@ -460,7 +460,7 @@ module.exports = UserModel;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-12-04T07:05:49.282Z
+                at 2024-12-04T09:29:15.604Z
             </div>
         <script src="../prettify.js"></script>
         <script>
