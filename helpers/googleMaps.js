@@ -10,17 +10,25 @@ async function geocodeAddress(placeName) {
         key: process.env.GOOGLE_MAPS_API_KEY,
       },
     });
+    console.log(response.data);
+    
 
     if (response.data.results && response.data.results.length > 0) {
       const location = response.data.results[0];
+      const coordinates = {
+        lat: location.geometry.location.lat,
+        lng: location.geometry.location.lng,
+      };
+
+      const id = location.place_id
+
       return {
-        coordinates: {
-          lat: location.geometry.location.lat,
-          lng: location.geometry.location.lng,
-        },
+        coordinates,
         formattedAddress: location.formatted_address,
+        placeId: id,
       };
     }
+
     return null;
   } catch (error) {
     console.error("Geocoding error:", error);
@@ -28,4 +36,4 @@ async function geocodeAddress(placeName) {
   }
 }
 
-module.exports = { geocodeAddress }; 
+module.exports = { geocodeAddress };

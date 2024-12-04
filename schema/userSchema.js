@@ -35,6 +35,7 @@ const typeDefs = `#graphql
         description: String
         address: String
         coordinates: Coordinates
+        placeId: String
     }
 
     type Video {
@@ -151,7 +152,8 @@ const resolvers = {
         const { _id } = user;
 
         const recommendations = await generateRecommendations(args);
-
+        // console.log(recommendations, "recommendations");
+        
         const updatedUser = await UserModel.updateUser({
           _id: new ObjectId(_id),
           ...args,
