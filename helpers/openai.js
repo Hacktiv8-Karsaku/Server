@@ -75,7 +75,7 @@ async function generateRecommendations(userPreferences) {
     Please provide recommendations in JSON format:
     {
       "todoList": [
-        array of 10 items including:
+        array of string 10 items including:
         - 3 stress-reduction activities
         - 2 mood-boosting activity
         - 3 local healing place visit

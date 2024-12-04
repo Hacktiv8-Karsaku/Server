@@ -4,9 +4,11 @@ const client = new Client({});
 
 async function geocodeAddress(placeName) {
   try {
-    const response = await client.geocode({
+    const placesResponse = await client.findPlaceFromText({
       params: {
-        address: placeName,
+        input: placeName,
+        inputtype: "textquery",
+        fields: ["photos", "formatted_address", "geometry", "name"],
         key: process.env.GOOGLE_MAPS_API_KEY,
       },
     });
@@ -31,7 +33,7 @@ async function geocodeAddress(placeName) {
 
     return null;
   } catch (error) {
-    console.error("Geocoding error:", error);
+    console.error("Places API error:", error);
     return null;
   }
 }
