@@ -35,6 +35,7 @@ const typeDefs = `#graphql
         description: String
         address: String
         coordinates: Coordinates
+        photoUrl: String
     }
 
     type Video {
@@ -45,9 +46,11 @@ const typeDefs = `#graphql
     }
 
     type Query {
+        serverLive: String
         getAllUsers: [User]
         getUserProfile(id: ID): User
         getSavedTodos: [String]
+        getAllDestionations: [Place]
     }
 
     type preference {
@@ -87,6 +90,8 @@ const typeDefs = `#graphql
 
 const resolvers = {
   Query: {
+    serverLive: () => "Server is live",
+
     getAllUsers: async (parent, args, contextValue) => {
       await contextValue.auth();
       const users = await UserModel.findAll();
@@ -105,6 +110,15 @@ const resolvers = {
       try {
         const user = await contextValue.auth();
         return user.savedTodos || [];
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    getAllDestionations: async (_, __, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { recommendations } = user;
+        return recommendations.places;
       } catch (error) {
         throw new Error(error.message);
       }
@@ -217,7 +231,7 @@ const resolvers = {
           stressLevel: user.stressLevel,
           preferredFoods: user.preferredFoods,
           avoidedFoods: user.avoidedFoods,
-          domicile: user.domicile
+          domicile: user.domicile,
         });
 
         // Update user with new recommendations
