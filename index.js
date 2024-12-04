@@ -27,6 +27,10 @@ const io = new Server(httpServer, {
   transports: ['websocket', 'polling']
 });
 
+// Keep track of connected users and their socket IDs
+const connectedUsers = new Map(); // userId -> socketId
+const activeRooms = new Map();    // roomId -> Set of participants
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
@@ -66,7 +70,88 @@ io.on('connection', (socket) => {
     socket.leave(chatId);
   });
 
+  // Video Call Handlers
+  socket.on('register', ({ userId }) => {
+    connectedUsers.set(userId, socket.id);
+    console.log(`User ${userId} registered with socket ${socket.id}`);
+  });
+
+  socket.on('initiateCall', ({ callerId, receiverId, chatId }) => {
+    const receiverSocketId = connectedUsers.get(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('incomingCall', {
+        callerId,
+        chatId
+      });
+    }
+  });
+
+  socket.on('acceptCall', ({ callerId, receiverId, chatId }) => {
+    const callerSocketId = connectedUsers.get(callerId);
+    if (callerSocketId) {
+      // Create a room for the call
+      const roomId = chatId;
+      socket.join(roomId);
+      io.sockets.sockets.get(callerSocketId)?.join(roomId);
+      
+      activeRooms.set(roomId, new Set([callerId, receiverId]));
+      
+      io.to(roomId).emit('callAccepted', { roomId });
+    }
+  });
+
+  socket.on('rejectCall', ({ callerId }) => {
+    const callerSocketId = connectedUsers.get(callerId);
+    if (callerSocketId) {
+      io.to(callerSocketId).emit('callRejected');
+    }
+  });
+
+  // WebRTC Signaling
+  socket.on('offer', ({ offer, roomId }) => {
+    socket.to(roomId).emit('offer', offer);
+  });
+
+  socket.on('answer', ({ answer, roomId }) => {
+    socket.to(roomId).emit('answer', answer);
+  });
+
+  socket.on('ice-candidate', ({ candidate, roomId }) => {
+    socket.to(roomId).emit('ice-candidate', candidate);
+  });
+
+  socket.on('endCall', ({ roomId }) => {
+    if (activeRooms.has(roomId)) {
+      io.to(roomId).emit('callEnded');
+      // Clean up the room
+      const sockets = io.sockets.adapter.rooms.get(roomId);
+      if (sockets) {
+        sockets.forEach(socketId => {
+          io.sockets.sockets.get(socketId)?.leave(roomId);
+        });
+      }
+      activeRooms.delete(roomId);
+    }
+  });
+
   socket.on('disconnect', () => {
+    // Find and remove the disconnected user
+    for (const [userId, socketId] of connectedUsers.entries()) {
+      if (socketId === socket.id) {
+        connectedUsers.delete(userId);
+        // Notify relevant rooms/peers about disconnection
+        for (const [roomId, participants] of activeRooms.entries()) {
+          if (participants.has(userId)) {
+            io.to(roomId).emit('peerDisconnected', { userId });
+            participants.delete(userId);
+            if (participants.size < 2) {
+              activeRooms.delete(roomId);
+            }
+          }
+        }
+        break;
+      }
+    }
     console.log('Client disconnected:', socket.id);
   });
 });
