@@ -12,27 +12,25 @@ async function geocodeAddress(placeName) {
         key: process.env.GOOGLE_MAPS_API_KEY,
       },
     });
+    console.log(response.data);
+    
 
-    if (
-      placesResponse.data.candidates &&
-      placesResponse.data.candidates.length > 0
-    ) {
-      const place = placesResponse.data.candidates[0];
-      const photoReference = place.photos?.[0]?.photo_reference;
+    if (response.data.results && response.data.results.length > 0) {
+      const location = response.data.results[0];
+      const coordinates = {
+        lat: location.geometry.location.lat,
+        lng: location.geometry.location.lng,
+      };
 
-      const photoUrl = photoReference
-        ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${process.env.GOOGLE_MAPS_API_KEY}`
-        : null;
+      const id = location.place_id
 
       return {
-        coordinates: {
-          lat: place.geometry.location.lat,
-          lng: place.geometry.location.lng,
-        },
-        formattedAddress: place.formatted_address,
-        photoUrl: photoUrl,
+        coordinates,
+        formattedAddress: location.formatted_address,
+        placeId: id,
       };
     }
+
     return null;
   } catch (error) {
     console.error("Places API error:", error);

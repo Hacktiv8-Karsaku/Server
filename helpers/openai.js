@@ -107,8 +107,8 @@ async function generateRecommendations(userPreferences) {
     );
 
     // Add debug logging
-    console.log("Videos found:", videos.length);
-    console.log("Sample video:", videos[0]);
+    // console.log("Videos found:", videos.length);
+    // console.log("Sample video:", videos[0]);
 
     // Inside generateRecommendations function, after getting baseRecommendations:
     const enhancedPlaces = await Promise.all(
@@ -119,6 +119,7 @@ async function generateRecommendations(userPreferences) {
             ...place,
             address: geocodeResult.formattedAddress,
             coordinates: geocodeResult.coordinates,
+            placeId: geocodeResult.placeId,
           };
         }
         return place;
