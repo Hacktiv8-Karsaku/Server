@@ -17,7 +17,7 @@ const typeDefs = `#graphql
         preferredFoods: [String]
         avoidedFoods: [String]
         recommendations: Recommendations
-        savedTodos: [String]
+        savedTodos: [Todo]
         lastQuestionDate: String
         createdAt: String
         updatedAt: String
@@ -48,9 +48,15 @@ const typeDefs = `#graphql
     type Query {
         serverLive: String
         getAllUsers: [User]
-        getUserProfile(id: ID): User
-        getSavedTodos: [String]
+        getUserProfile(date: String): User
+        getSavedTodos(date: String): [Todo]
         getAllDestionations: [Place]
+    }
+
+    type Todo {
+        todoItem: String
+        date: String
+        status: String
     }
 
     type preference {
@@ -76,10 +82,12 @@ const typeDefs = `#graphql
             preferredFoods: [String]
             avoidedFoods: [String]
             domicile: String
+            date: String
         ): User
-        saveTodoItem(todoItem: String): User
+        saveTodoItem(todoItem: String, date: String): User
         deleteTodoItem(todoItem: String): User
-        regenerateTodos: User
+        regenerateTodos(date: String): User
+        updateTodoStatus(todoItem: String, status: String): User
     }
 
     type Coordinates {
@@ -102,14 +110,20 @@ const resolvers = {
       await contextValue.auth();
       const { _id } = await contextValue.auth();
       console.log(args);
-      const user = await UserModel.getUserProfile(_id);
+      const user = await UserModel.getUserProfile(_id, args.date);
       return user;
     },
 
-    getSavedTodos: async (_, __, contextValue) => {
+    getSavedTodos: async (_, { date }, contextValue) => {
       try {
         const user = await contextValue.auth();
-        return user.savedTodos || [];
+        const filteredTodos = user.savedTodos.filter(
+          (todo) =>
+            new Date(todo.date).toLocaleDateString() ===
+            new Date(date).toLocaleDateString()
+        );
+        console.log(filteredTodos, "<<<filteredTodos");
+        return filteredTodos || [];
       } catch (error) {
         throw new Error(error.message);
       }
@@ -166,27 +180,38 @@ const resolvers = {
 
         const recommendations = await generateRecommendations(args);
 
-        const updatedUser = await UserModel.updateUser({
-          _id: new ObjectId(_id),
-          ...args,
+        const updatedUser = await UserModel.updateUser(
+          {
+            _id: new ObjectId(_id),
+            ...args,
+            lastQuestionDate: new Date().toISOString(),
+            updatedAt: new Date(),
+          },
           recommendations,
-          lastQuestionDate: new Date().toISOString(),
-          updatedAt: new Date(),
-        });
+          args.date
+        );
 
         return updatedUser;
       } catch (error) {
         throw new Error(error.message);
       }
     },
-    saveTodoItem: async (_, { todoItem }, contextValue) => {
+    saveTodoItem: async (_, { todoItem, date }, contextValue) => {
       try {
         const user = await contextValue.auth();
         const { _id } = user;
 
         const updatedUser = await UserModel.findOneAndUpdate(
           { _id },
-          { $push: { savedTodos: todoItem } },
+          {
+            $push: {
+              savedTodos: {
+                todoItem,
+                date: new Date(date).toISOString(),
+                status: "pending",
+              },
+            },
+          },
           { new: true }
         );
 
@@ -198,11 +223,14 @@ const resolvers = {
     deleteTodoItem: async (_, { todoItem }, contextValue) => {
       try {
         const user = await contextValue.auth();
-        const { _id } = user;
+        const { _id, savedTodos } = user;
+        const filteredTodos = savedTodos.filter(
+          (todo) => todo.todoItem !== todoItem
+        );
 
         const updatedUser = await UserModel.findOneAndUpdate(
           { _id },
-          { $pull: { savedTodos: todoItem } },
+          { $set: { savedTodos: filteredTodos } },
           { new: true }
         );
 
@@ -210,21 +238,16 @@ const resolvers = {
           throw new Error("Todo item not found");
         }
 
-        if (!updatedUser) {
-          throw new Error("Video not found");
-        }
-
         return updatedUser;
       } catch (error) {
         throw new Error(error.message);
       }
     },
-    regenerateTodos: async (_, __, contextValue) => {
+    regenerateTodos: async (_, { date }, contextValue) => {
       try {
         const user = await contextValue.auth();
         const { _id } = user;
 
-        // Generate new recommendations
         const recommendations = await generateRecommendations({
           job: user.job,
           dailyActivities: user.dailyActivities,
@@ -234,15 +257,52 @@ const resolvers = {
           domicile: user.domicile,
         });
 
-        // Update user with new recommendations
-        const updatedUser = await UserModel.updateUser({
-          _id: new ObjectId(_id),
+        const updatedUser = await UserModel.updateUser(
+          {
+            _id: new ObjectId(_id),
+            lastQuestionDate: new Date().toISOString(),
+            updatedAt: new Date(),
+          },
           recommendations,
-          updatedAt: new Date(),
-        });
+          date
+        );
+
+        return updatedUser;
+
+        // Generate new recommendations
+
+        // Update user with new recommendations
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+
+    updateTodoStatus: async (_, { todoItem, status }, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { _id, savedTodos } = user;
+        const selectedTodo = savedTodos.find(
+          (todo) => todo.todoItem === todoItem
+        );
+        selectedTodo.status = status;
+
+        const newTodos = savedTodos.map((todo) =>
+          todo.todoItem === todoItem ? selectedTodo : todo
+        );
+
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { _id },
+          { $set: { savedTodos: newTodos } },
+          { new: true }
+        );
+
+        if (!updatedUser) {
+          throw new Error("Todo item not found");
+        }
 
         return updatedUser;
       } catch (error) {
+        console.log(error, "<<<error");
         throw new Error(error.message);
       }
     },

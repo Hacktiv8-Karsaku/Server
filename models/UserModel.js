@@ -2,6 +2,7 @@ const { ObjectId } = require("mongodb");
 const { db } = require("../config/mongodb");
 const { isEmail } = require("validator");
 const { hashPass } = require("../helpers/bcyrpt");
+const { col } = require("sequelize");
 
 const collection = db.collection("users");
 
@@ -62,8 +63,19 @@ class UserModel {
     return data;
   }
 
-  static async getUserProfile(_id) {
+  static async getUserProfile(_id, date) {
     const data = await collection.findOne({ _id: new ObjectId(String(_id)) });
+    const todayRecommendations = data.recommendations.filter(
+      (recommendation) => {
+        return (
+          new Date(recommendation.date).toDateString() ===
+          new Date(date).toDateString()
+        );
+      }
+    );
+    const selectedRecommendations = todayRecommendations[0]?.recommendations;
+    data.recommendations = selectedRecommendations;
+    // console.log(todayRecommendations[0].recommendations);
     return data;
   }
 
@@ -81,13 +93,25 @@ class UserModel {
     return data;
   }
 
-  static async updateUser(userData) {
+  static async updateUser(userData, recommendations, date) {
     const { _id, ...updateData } = userData;
-    
+
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(String(_id)) },
       { $set: updateData },
-      { returnDocument: 'after' }
+      { returnDocument: "after" }
+    );
+
+    await collection.updateOne(
+      { _id: new ObjectId(String(_id)) },
+      {
+        $push: {
+          recommendations: {
+            date: new Date(date).toLocaleDateString(),
+            recommendations,
+          },
+        },
+      }
     );
 
     return result;
@@ -97,14 +121,16 @@ class UserModel {
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(String(filter._id)) },
       update,
-      { ...options, returnDocument: 'after' }
+      { ...options, returnDocument: "after" }
     );
     return result;
   }
 
   static async shouldAskQuestions(userId) {
-    const user = await collection.findOne({ _id: new ObjectId(String(userId)) });
-    
+    const user = await collection.findOne({
+      _id: new ObjectId(String(userId)),
+    });
+
     if (!user.dailyActivities) {
       return true;
     }
@@ -115,7 +141,7 @@ class UserModel {
 
     const lastDate = new Date(user.lastQuestionDate);
     const today = new Date();
-    
+
     return lastDate.toDateString() !== today.toDateString();
   }
 
