@@ -52,49 +52,30 @@ async function generateRecommendations(userPreferences) {
     - Location: ${userPreferences.domicile}
 
     STRICT LOCATION REQUIREMENTS:
-    1. Only recommend places that are physically located within 50km of ${
-      userPreferences.domicile
-    }
-    2. Do not suggest any international or distant locations
-    3. All activities must be feasible to do locally in ${
-      userPreferences.domicile
-    }
+    1. Only recommend REAL, EXISTING places within ${userPreferences.domicile}
+    2. Each place must have a COMPLETE, ACCURATE name as it appears on Google Maps
+    3. All places must be actual establishments or locations that exist in ${userPreferences.domicile}
 
-    Create a balanced todo list that includes:
-    1. Stress-reduction activities (meditation, breathing exercises, etc.)
-    2. Mood-boosting activities (exercise, social interactions, hobbies)
-    3. Local healing places or destinations to visit
-    4. Self-care practices
-    5. Mindfulness exercises
-
-    Consider the user's stress level (${
-      userPreferences.stressLevel
-    }/10) when suggesting activities.
-    Higher stress levels should include more calming activities, while lower stress levels can include more energetic activities.
-
-    Please provide recommendations in JSON format:
+    Create recommendations in JSON format:
     {
-      "todoList": [
-        array of string 10 items including:
-        - 3 stress-reduction activities
-        - 2 mood-boosting activity
-        - 3 local healing place visit
-        - 2 self-care practice
-      ],
+      "todoList": [array of 10 string items],
       "places": [
         {
-          "name": "Full location name including district/area in ${
-            userPreferences.domicile
-          }",
-          "description": "Brief description of the place and its stress-relief benefits",
-          "address": "Complete street address in ${userPreferences.domicile}",
-          "coordinates": {
-            "lat": latitude as number,
-            "lng": longitude as number
-          }
+          "name": "EXACT place name as it appears on Google Maps",
+          "description": "Brief description focusing on stress relief and relaxation benefits",
+          "address": "Full address in ${userPreferences.domicile}",
+          "type": "One of: [park, spa, cafe, temple, beach, garden, museum]",
+          "rating": "4.5",
+          "imageCategory": "relaxation"
         }
       ]
-    }`;
+    }
+
+    Include exactly 5 places that are:
+    1. Well-known and easily findable on Google Maps
+    2. Actually located in ${userPreferences.domicile}
+    3. Perfect for stress relief and relaxation
+    4. Mix of indoor and outdoor locations`;
 
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],
@@ -113,21 +94,34 @@ async function generateRecommendations(userPreferences) {
     // Inside generateRecommendations function, after getting baseRecommendations:
     const enhancedPlaces = await Promise.all(
       baseRecommendations.places.map(async (place) => {
-        const geocodeResult = await geocodeAddress(place.name);
-        if (geocodeResult) {
-          return {
-            ...place,
-            address: geocodeResult.formattedAddress,
-            coordinates: geocodeResult.coordinates,
-          };
+        try {
+          const geocodeResult = await geocodeAddress(place.name + ", " + userPreferences.domicile);
+          if (geocodeResult && geocodeResult.coordinates) {
+            return {
+              ...place,
+              address: geocodeResult.formattedAddress || place.address,
+              coordinates: geocodeResult.coordinates,
+              placeId: geocodeResult.placeId || null,
+              uri: `https://source.unsplash.com/random/?${place.type},${place.imageCategory}`
+            };
+          }
+        } catch (error) {
+          console.error(`Geocoding failed for ${place.name}:`, error);
         }
-        return place;
+        // Return original place data if geocoding fails
+        return {
+          ...place,
+          coordinates: { lat: 0, lng: 0 },
+          placeId: null,
+          uri: `https://source.unsplash.com/random/?${place.type || 'place'},relaxation`
+        };
       })
-    );
+    ).then(places => places.filter(place => place !== null));
 
     return {
       ...baseRecommendations,
-      places: enhancedPlaces,
+      places: enhancedPlaces.filter(place => place.coordinates && 
+        (place.coordinates.lat !== 0 || place.coordinates.lng !== 0)),
       foodVideos: videos,
     };
   } catch (error) {

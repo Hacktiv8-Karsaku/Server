@@ -19,20 +19,35 @@ startStandaloneServer(server, {
     return {
       auth: async () => {
         const authorization = req.headers.authorization;
-        if (!authorization) throw new Error("unauthorized");
+
+        // Check if the Authorization header is present
+        if (!authorization) throw new Error("Unauthorized: No authorization header provided");
 
         const [type, token] = authorization.split(" ");
-        if (type !== "Bearer") throw new Error("invalid token");
 
-        const verified = verifyToken(token);
+        // Validate the token type
+        if (type !== "Bearer") throw new Error("Invalid token: Expected Bearer token");
 
-        if (!ObjectId.isValid(verified._id)) {
-          throw new Error("invalid user ID");
+        let verified;
+        try {
+          verified = verifyToken(token); // Verify and decode the JWT
+        } catch (error) {
+          throw new Error("Invalid token: Token verification failed");
         }
 
+        // Validate the user ID in the token
+        if (!ObjectId.isValid(verified._id)) {
+          throw new Error("Invalid user ID in token");
+        }
+
+        // Fetch the user from the database
         const user = await UserModel.findById(verified._id);
+        if (!user) throw new Error("User not found: Invalid user ID");
+
+        // Return the authenticated user
         return user;
-      },
+      }
+
     };
   },
 }).then(({ url }) => {

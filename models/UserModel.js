@@ -2,50 +2,49 @@ const { ObjectId } = require("mongodb");
 const { db } = require("../config/mongodb");
 const { isEmail } = require("validator");
 const { hashPass } = require("../helpers/bcyrpt");
-const { col } = require("sequelize");
-
 const collection = db.collection("users");
 
 class UserModel {
   static async register(user) {
-    if (!user.name) {
-      throw new Error("Name is required");
+    try {
+      // Validate required fields
+      if (!user.name) throw new Error("Name is required");
+      if (!user.username) throw new Error("Username is required");
+      if (!user.email) throw new Error("Email is required");
+      if (!user.password) throw new Error("Password is required");
+      if (!user.job) throw new Error("Job is required");
+
+      // Validate email format
+      if (!isEmail(user.email)) {
+        throw new Error("Email format is invalid");
+      }
+
+      // Validate password length
+      if (user.password.length < 5) {
+        throw new Error("Password length should be at least 5 characters");
+      }
+
+      // Check for existing username
+      const existingUsername = await this.getUserByUsername(user.username);
+      if (existingUsername) {
+        throw new Error("Username already exists");
+      }
+
+      // Check for existing email
+      const existingEmail = await this.getUserByEmail(user.email);
+      if (existingEmail) {
+        throw new Error("Email already exists");
+      }
+
+      // Hash password
+      user.password = hashPass(user.password);
+
+      // Insert user
+      const result = await collection.insertOne(user);
+      return result;
+    } catch (error) {
+      throw error;
     }
-
-    if (!user.username) {
-      throw new Error("Username is required");
-    }
-
-    if (!user.email) {
-      throw new Error("Email is required");
-    }
-
-    if (!isEmail(user.email)) {
-      throw new Error("Email format is invalid");
-    }
-
-    if (!user.password) {
-      throw new Error("Password is required");
-    }
-
-    if (user.password.length < 5) {
-      throw new Error("Password length should be at least 5 characters");
-    }
-
-    const getUsername = await UserModel.getUserByUsername(user.username);
-    if (getUsername) {
-      throw new Error("Username already exists");
-    }
-
-    const getEmail = await UserModel.getUserByEmail(user.email);
-    if (getEmail) {
-      throw new Error("Email already exists");
-    }
-
-    user.password = hashPass(user.password);
-
-    const newUser = await collection.insertOne(user);
-    return newUser;
   }
 
   static async login(username, password) {
@@ -64,19 +63,24 @@ class UserModel {
   }
 
   static async getUserProfile(_id, date) {
-    const data = await collection.findOne({ _id: new ObjectId(String(_id)) });
-    const todayRecommendations = data.recommendations.filter(
-      (recommendation) => {
-        return (
-          new Date(recommendation.date).toDateString() ===
-          new Date(date).toDateString()
-        );
-      }
-    );
-    const selectedRecommendations = todayRecommendations[0]?.recommendations;
-    data.recommendations = selectedRecommendations;
-    // console.log(todayRecommendations[0].recommendations);
-    return data;
+    const user = await collection.findOne({
+      _id: new ObjectId(String(_id))
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Ensure recommendations is always an object with the correct structure
+    if (!user.recommendations) {
+      user.recommendations = {
+        todoList: [],
+        places: [],
+        foodVideos: []
+      };
+    }
+
+    return user;
   }
 
   static async getUserByName(name) {
@@ -96,23 +100,37 @@ class UserModel {
   static async updateUser(userData, recommendations, date) {
     const { _id, ...updateData } = userData;
 
+    // Ensure recommendations has the correct structure
+    const formattedRecommendations = {
+      todoList: recommendations.todoList || [],
+      places: recommendations.places || [],
+      foodVideos: recommendations.foodVideos || []
+    };
+
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(String(_id)) },
-      { $set: updateData },
+      { 
+        $set: {
+          ...updateData,
+          recommendations: formattedRecommendations
+        }
+      },
       { returnDocument: "after" }
     );
 
-    await collection.updateOne(
-      { _id: new ObjectId(String(_id)) },
-      {
-        $push: {
-          recommendations: {
-            date: new Date(date).toLocaleDateString(),
-            recommendations,
+    if (recommendations && date) {
+      await collection.updateOne(
+        { _id: new ObjectId(String(_id)) },
+        {
+          $push: {
+            recommendationsHistory: {
+              date: new Date(date).toLocaleDateString(),
+              recommendations: formattedRecommendations,
+            },
           },
-        },
-      }
-    );
+        }
+      );
+    }
 
     return result;
   }

@@ -17,11 +17,17 @@ const typeDefs = `#graphql
         preferredFoods: [String]
         avoidedFoods: [String]
         recommendations: Recommendations
+        recommendationsHistory: [RecommendationHistory]
         savedTodos: [Todo]
         lastQuestionDate: String
         createdAt: String
         updatedAt: String
         domicile: String
+    }
+
+    type RecommendationHistory {
+        date: String
+        recommendations: Recommendations
     }
 
     type Recommendations {
@@ -35,7 +41,11 @@ const typeDefs = `#graphql
         description: String
         address: String
         coordinates: Coordinates
-        photoUrl: String
+        placeId: String
+        type: String
+        rating: String
+        uri: String
+        imageCategory: String
     }
 
     type Video {
@@ -51,6 +61,7 @@ const typeDefs = `#graphql
         getUserProfile(date: String): User
         getSavedTodos(date: String): [Todo]
         getAllDestionations: [Place]
+        getRecommendationsByDate(date: String!): Recommendations
     }
 
     type Todo {
@@ -133,6 +144,27 @@ const resolvers = {
         const user = await contextValue.auth();
         const { recommendations } = user;
         return recommendations.places;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    getRecommendationsByDate: async (_, { date }, contextValue) => {
+      try {
+        const user = await contextValue.auth();
+        const { recommendationsHistory } = user;
+        
+        // Find recommendations for the specific date
+        const dateRecommendation = recommendationsHistory?.find(
+          (history) => new Date(history.date).toLocaleDateString() === 
+                      new Date(date).toLocaleDateString()
+        );
+
+        // Return the recommendations for that date or empty structure
+        return dateRecommendation?.recommendations || {
+          todoList: [],
+          places: [],
+          foodVideos: []
+        };
       } catch (error) {
         throw new Error(error.message);
       }
