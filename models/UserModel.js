@@ -75,7 +75,6 @@ class UserModel {
     );
     const selectedRecommendations = todayRecommendations[0]?.recommendations;
     data.recommendations = selectedRecommendations;
-    // console.log(todayRecommendations[0].recommendations);
     return data;
   }
 
