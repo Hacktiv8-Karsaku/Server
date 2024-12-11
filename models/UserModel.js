@@ -2,7 +2,6 @@ const { ObjectId } = require("mongodb");
 const { db } = require("../config/mongodb");
 const { isEmail } = require("validator");
 const { hashPass } = require("../helpers/bcyrpt");
-const { col } = require("sequelize");
 
 const collection = db.collection("users");
 
