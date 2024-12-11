@@ -35,7 +35,11 @@ const typeDefs = `#graphql
         description: String
         address: String
         coordinates: Coordinates
-        photoUrl: String
+        placeId: String
+        type: String
+        rating: String
+        uri: String
+        imageCategory: String
     }
 
     type Video {
@@ -109,7 +113,6 @@ const resolvers = {
     getUserProfile: async (parent, args, contextValue) => {
       await contextValue.auth();
       const { _id } = await contextValue.auth();
-      console.log(args);
       const user = await UserModel.getUserProfile(_id, args.date);
       return user;
     },
@@ -122,7 +125,6 @@ const resolvers = {
             new Date(todo.date).toLocaleDateString() ===
             new Date(date).toLocaleDateString()
         );
-        console.log(filteredTodos, "<<<filteredTodos");
         return filteredTodos || [];
       } catch (error) {
         throw new Error(error.message);
@@ -268,10 +270,6 @@ const resolvers = {
         );
 
         return updatedUser;
-
-        // Generate new recommendations
-
-        // Update user with new recommendations
       } catch (error) {
         throw new Error(error.message);
       }
@@ -302,7 +300,6 @@ const resolvers = {
 
         return updatedUser;
       } catch (error) {
-        console.log(error, "<<<error");
         throw new Error(error.message);
       }
     },
