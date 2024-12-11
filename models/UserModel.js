@@ -1,12 +1,51 @@
 const { ObjectId } = require("mongodb");
 const { db } = require("../config/mongodb");
+const { isEmail } = require("validator");
+const { hashPass } = require("../helpers/bcyrpt");
+const { col } = require("sequelize");
 
 const collection = db.collection("users");
 
 class UserModel {
-  static async register(newUser) {
-    const data = await collection.insertOne(newUser);
-    return data;
+  static async register(user) {
+    if (!user.name) {
+      throw new Error("Name is required");
+    }
+
+    if (!user.username) {
+      throw new Error("Username is required");
+    }
+
+    if (!user.email) {
+      throw new Error("Email is required");
+    }
+
+    if (!isEmail(user.email)) {
+      throw new Error("Email format is invalid");
+    }
+
+    if (!user.password) {
+      throw new Error("Password is required");
+    }
+
+    if (user.password.length < 5) {
+      throw new Error("Password length should be at least 5 characters");
+    }
+
+    const getUsername = await UserModel.getUserByUsername(user.username);
+    if (getUsername) {
+      throw new Error("Username already exists");
+    }
+
+    const getEmail = await UserModel.getUserByEmail(user.email);
+    if (getEmail) {
+      throw new Error("Email already exists");
+    }
+
+    user.password = hashPass(user.password);
+
+    const newUser = await collection.insertOne(user);
+    return newUser;
   }
 
   static async login(username, password) {
@@ -14,13 +53,28 @@ class UserModel {
     return data;
   }
 
-  static async getUsers() {
+  static async findAll() {
     const data = await collection.find().toArray();
     return data;
   }
 
-  static async getUserProfile(_id) {
+  static async findById(_id) {
     const data = await collection.findOne({ _id: new ObjectId(String(_id)) });
+    return data;
+  }
+
+  static async getUserProfile(_id, date) {
+    const data = await collection.findOne({ _id: new ObjectId(String(_id)) });
+    const todayRecommendations = data.recommendations.filter(
+      (recommendation) => {
+        return (
+          new Date(recommendation.date).toDateString() ===
+          new Date(date).toDateString()
+        );
+      }
+    );
+    const selectedRecommendations = todayRecommendations[0]?.recommendations;
+    data.recommendations = selectedRecommendations;
     return data;
   }
 
@@ -36,6 +90,65 @@ class UserModel {
   static async getUserByEmail(email) {
     const data = await collection.findOne({ email });
     return data;
+  }
+
+  static async updateUser(userData, recommendations, date) {
+    const { _id, ...updateData } = userData;
+
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(String(_id)) },
+      { $set: updateData },
+      { returnDocument: "after" }
+    );
+
+    await collection.updateOne(
+      { _id: new ObjectId(String(_id)) },
+      {
+        $push: {
+          recommendations: {
+            date: new Date(date).toLocaleDateString(),
+            recommendations,
+          },
+        },
+      }
+    );
+
+    return result;
+  }
+
+  static async findOneAndUpdate(filter, update, options) {
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(String(filter._id)) },
+      update,
+      { ...options, returnDocument: "after" }
+    );
+    return result;
+  }
+
+  static async shouldAskQuestions(userId) {
+    const user = await collection.findOne({
+      _id: new ObjectId(String(userId)),
+    });
+
+    if (!user.dailyActivities) {
+      return true;
+    }
+
+    if (!user.lastQuestionDate) {
+      return true;
+    }
+
+    const lastDate = new Date(user.lastQuestionDate);
+    const today = new Date();
+
+    return lastDate.toDateString() !== today.toDateString();
+  }
+
+  static async updateLastQuestionDate(userId) {
+    await collection.updateOne(
+      { _id: new ObjectId(String(userId)) },
+      { $set: { lastQuestionDate: new Date().toISOString() } }
+    );
   }
 }
 
